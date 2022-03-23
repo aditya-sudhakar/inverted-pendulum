@@ -26,11 +26,13 @@ syms s a b l g Kp Ki Jp Ji Ci   % define symbolic variables
 Hvtheta = -s/l/(s^2-g/l);       % TF from velocity to angle of pendulum
 
 K = Kp + Ki/s;                  % TF of the PI angle controller
-% M = a*b/(s+a)                 % TF of motor
-M = 1;                          % TF without motor  
+M = a*b/(s+a);                 % TF of motor
+Mcl = Jp + Ji / s + Ci / s^2;
+Mcloop = 1/b * M/(1+M*Mcl);
+% M = 1;                          % TF without motor  
 %  
 %closed loop transfer function from disturbance d(t)totheta(t)
-Hcloop = 1/(1-Hvtheta*M*K)  
+Hcloop = 1/(1-Hvtheta*Mcloop*K)  
 
 pretty(simplify(Hcloop))       % to display the total transfer function
 
@@ -38,8 +40,8 @@ pretty(simplify(Hcloop))       % to display the total transfer function
 % system parameters
 g = 9.81;
 l = 22*2.54/100  %effective length 
-a = 14;           %nomical motor parameters
-b = 1/400;        %nomical motor parameters
+a = 12.5;           %nomical motor parameters
+b = 0.00323;        %nomical motor parameters
 
 Hcloop_sub = subs(Hcloop) % sub parameter values into Hcloop
 
@@ -48,11 +50,13 @@ Hcloop_sub = subs(Hcloop) % sub parameter values into Hcloop
 % e.g., want some oscillations, want fast decay, etc. 
 p1 = -1 + 1*pi*i
 p2 = -1 - 1*pi*i
-p3 = -8
+p3 = -3 + .5*pi*i
+p4 = -3 - .5*pi*i
+p5 = -8
 
 % target characteristic polynomial
 % if motor model (TF) is added, order of polynomial will increases
-tgt_char_poly = (s-p1)*(s-p2)*(s-p3)
+tgt_char_poly = (s-p1)*(s-p2)*(s-p3)*(s-p4)*(s-p5)
 
 % get the denominator from Hcloop_sub
 [n d] = numden(Hcloop_sub)
@@ -68,11 +72,14 @@ coeffs_tgt = coeffs(tgt_char_poly, s)
 
 % solve the system of equations setting the coefficients of the
 % polynomial in the target to the actual polynomials
-solutions = solve(coeffs_denom(1:2) == coeffs_tgt(1:2),  Kp, Ki)
+solutions = solve(coeffs_denom(1:4) == coeffs_tgt(1:4),  Kp, Ki, Jp, Ji, Ci)
 
 % display the solutions as double precision numbers
 Kp = double(solutions.Kp)
 Ki = double(solutions.Ki)
+Jp = double(solutions.Jp)
+Ji = double(solutions.Ji)
+Ci = double(solutions.Ci)
 
 % Location of the poles of the closed-loop TF.
 % NOTE there are only 2 unknowns but 3 polynomial coefficients so 
@@ -92,7 +99,7 @@ closed_loop_poles = vpa (roots(subs(coeffs_denom)), 4)
     figure(2)
     step(TFH)
     
-    
+
 
 
 

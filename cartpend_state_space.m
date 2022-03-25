@@ -20,7 +20,7 @@ rank(ctrb(A,B))  % is it controllable
 
 % Pole placement
 p = [-2; -2.1; -2.2; -2.3]; % good
-K = place(A,B,p)
+%K = place(A,B,p)
 
 % Place poles using LQR
 Q = eye(size(A));
@@ -29,7 +29,10 @@ Q(2, 2) = 1;
 Q(3, 3) = 10;
 Q(4, 4) = 100;
 R = 0.01;
-%K = lqr(A,B,Q,R);
+K = lqr(A,B,Q,R);
+
+% Validate poles
+poles = eigs(A-B*K)
 
 % Simulate cartpend
 tspan = 0:.001:10;
